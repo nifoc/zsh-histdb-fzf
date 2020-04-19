@@ -252,7 +252,7 @@ histdb-fzf-widget() {
     # log the FZF arguments
     OPTIONS="$ORIG_FZF_DEFAULT_OPTS
       --ansi
-      --header='${typ}${NL}${switchhints}${NL}―――――――――――――――――――――――――' --delimiter=' '
+      --delimiter=' '
       -n2.. --with-nth=2..
       --tiebreak=index --expect='esc,ctrl-r,f1,f2,f3,f4,f5'
       --bind 'ctrl-d:page-down,ctrl-u:page-up'
