@@ -48,7 +48,7 @@ histdb-fzf-query(){
   local where=""
   local everywhere=0
 	local cols="history.id as id, commands.argv as argv, max(start_time) as max_start, exit_status"
-	local groupby="group by history.command_id, history.place_id"
+	local groupby="group by commands.argv"
   local date_format="$(get_date_format)"
   local mst="datetime(max_start, 'unixepoch')"
   local dst="datetime('now', 'start of day')"
