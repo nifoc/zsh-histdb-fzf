@@ -37,16 +37,6 @@ NLT=$(printf "\n\t\t")
 
 autoload -U colors && colors
 
-histdb-fzf-log() {
-  if [[ ! -z ${HISTDB_FZF_LOGFILE} ]]; then
-    if [[ ! -f ${HISTDB_FZF_LOGFILE} ]]; then
-      touch ${HISTDB_FZF_LOGFILE}
-    fi
-    printf "%s %s\n" $(${datecmd} +'%s.%N') ${*//$NL/$NLT} >> ${HISTDB_FZF_LOGFILE}
-  fi
-}
-
-
 histdb-fzf-query(){
   # A wrapper for histb-query with fzf specific options and query
   _histdb_init
@@ -89,7 +79,6 @@ histdb-fzf-query(){
               everywhere=1
               ;;
           -a)
-							histdb-fzf-log "Grouping disabled"
 				      cols="history.id as id, commands.argv as argv, start_time as max_start, exit_status"
 							timecol="strftime( '${date_format} %H:%M', max_start, 'unixepoch', 'localtime') as time"
 				      groupby=""
@@ -122,11 +111,8 @@ histdb-fzf-query(){
 			)
       order by max_start desc"
 
-  histdb-fzf-log "query for log '${(Q)query}'"
-
   # use Figure Space U+2007 as separator
   _histdb_query -separator ' ' "$query"
-  histdb-fzf-log "query completed"
 }
 
 histdb-detail(){
@@ -167,8 +153,6 @@ histdb-detail(){
 
   array_str=("${$(sqlite3 -cmd ".timeout 1000" "${HISTDB_FILE}" -separator " " "$query" )}")
   array=(${(@s: :)array_str})
-
-  histdb-fzf-log "DETAIL: ${array_str}"
 
   # Add some color
   if [[ "${array[2]}" == "NONE" ]];then
@@ -214,9 +198,6 @@ histdb-fzf-widget() {
   ORIG_FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS
   query=${BUFFER}
   origquery=${BUFFER}
-  histdb-fzf-log "================== START ==================="
-  histdb-fzf-log "original buffers: -:$BUFFER l:$LBUFFER r:$RBUFFER"
-  histdb-fzf-log "original query $query"
   histdb_fzf_modes=('session' 'loc' 'global' 'everywhere')
 
   if [[ -n ${HISTDB_FZF_DEFAULT_MODE} ]]; then
@@ -226,15 +207,12 @@ histdb-fzf-widget() {
   else
     mode=1
   fi
-  histdb-fzf-log "Start mode ${histdb_fzf_modes[$mode]} ($mode)"
   exitkey='ctrl-r'
 	cmd_opts_extra=''
   setopt localoptions noglobsubst noposixbuiltins pipefail 2> /dev/null
   # Here it is getting a bit tricky, fzf does not support dynamic updating so we have to close and reopen fzf when changing the focus (session, dir, global)
   # so we check the exitkey and decide what to do
   while [[ "$exitkey" != "" && "$exitkey" != "esc" ]]; do
-    histdb-fzf-log "------------------- TURN -------------------"
-    histdb-fzf-log "Exitkey $exitkey"
     # the f keys are a shortcut to select a certain mode
 		if [[ $exitkey == "f5" ]]; then
 			mode=$((($mode - 1) % $#histdb_fzf_modes))
@@ -245,9 +223,7 @@ histdb-fzf-widget() {
 			fi
 		elif [[ $exitkey =~ "f." ]]; then
       mode=${exitkey[$(($MBEGIN+1)),$MEND]}
-      histdb-fzf-log "mode changed to ${histdb_fzf_modes[$mode]} ($mode)"
     fi
-    histdb-fzf-log "Extra Opts $cmd_opts_extra"
     # based on the mode, we use the options for histdb options
     case "$histdb_fzf_modes[$mode]" in
       'session')
@@ -272,7 +248,6 @@ histdb-fzf-widget() {
         ;;
     esac
 		mode=$(((($mode + 1) % $#histdb_fzf_modes)))
-    histdb-fzf-log "mode changed to ${histdb_fzf_modes[$mode]} ($mode)"
 
     # log the FZF arguments
     OPTIONS="$ORIG_FZF_DEFAULT_OPTS
@@ -286,33 +261,23 @@ histdb-fzf-widget() {
       --no-hscroll
       --query='${query}' +m"
 
-    histdb-fzf-log "$OPTIONS"
-
     result=( "${(@f)$( histdb-fzf-query ${cmd_opts} ${cmd_opts_extra} |
       FZF_DEFAULT_OPTS="${OPTIONS}" ${HISTDB_FZF_CMD})}" )
     # here we got a result from fzf, containing all the information, now we must handle it, split it and use the correct elements
-    histdb-fzf-log "returncode was $?"
     query=$result[1]
     exitkey=${result[2]}
     fzf_selected="${(@s: :)result[3]}"
     fzf_selected="${${(@s: :)result[3]}[1]}"
-    histdb-fzf-log "Query was      ${query:-<nothing>}"
-    histdb-fzf-log "Exitkey was    ${exitkey:-<NONE>}"
-    histdb-fzf-log "fzf_selected = $fzf_selected"
 
   done
   if [[ "$exitkey" == "esc" ]]; then
     BUFFER=$origquery
   else
-    histdb-fzf-log "histdb-get-command ${HISTDB_FILE} ${fzf_selected}"
     selected=$(histdb-get-command ${HISTDB_FILE} ${fzf_selected})
-    histdb-fzf-log "selected = $selected"
     BUFFER=$selected
   fi
   CURSOR=$#BUFFER
   zle redisplay
-  histdb-fzf-log "new buffers: -:$BUFFER l:$LBUFFER r:$RBUFFER"
-  histdb-fzf-log "=================== DONE ==================="
 }
 zle     -N   histdb-fzf-widget
 bindkey '^R' histdb-fzf-widget
