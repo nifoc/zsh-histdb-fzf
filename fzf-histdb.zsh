@@ -112,7 +112,7 @@ histdb-fzf-query(){
       order by max_start desc"
 
   # use Figure Space U+2007 as separator
-  _histdb_query -separator ' ' "$query"
+  _histdb_query -separator ' ' --escape off "$query"
 }
 
 histdb-detail(){
