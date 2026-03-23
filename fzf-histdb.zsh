@@ -53,7 +53,7 @@ histdb-fzf-query(){
   local mst="datetime(max_start, 'unixepoch')"
   local dst="datetime('now', 'start of day')"
   local yst="datetime('now', 'start of year')"
-  local timecol="strftime(
+  local timecol="'${fg[blue]}' || strftime(
                    case when $mst > $dst then
                       '%H:%M'
                    else (
@@ -65,7 +65,7 @@ histdb-fzf-query(){
                    end,
                    max_start,
                    'unixepoch',
-                   'localtime') as time"
+                   'localtime') || '${reset_color}' as time"
 
   for opt ($opts); do
       case $opt in
@@ -80,7 +80,7 @@ histdb-fzf-query(){
               ;;
           -a)
 				      cols="history.id as id, commands.argv as argv, start_time as max_start, exit_status"
-							timecol="strftime( '${date_format} %H:%M', max_start, 'unixepoch', 'localtime') as time"
+							timecol="'${fg[blue]}' || strftime( '${date_format} %H:%M', max_start, 'unixepoch', 'localtime') || '${reset_color}' as time"
 				      groupby=""
               ;;
       esac
